@@ -1,14 +1,17 @@
 /****
+ * @file CommandLine.cpp
+ * @version 1.0.0
+ * @date September 1, 2023
  * 
- * This file is a portion of the package UserInput, a library that provides 
+ * This file is a portion of the package CommandLine, a library that provides 
  * an Arduino sketch with the ability to provide a simple command line UI over 
  * a Stream (e.g., Serial).
  * 
- * See UserInput.h for details
+ * See CommandLine.h for details
  * 
  *****
  * 
- * UserInput V0.2, September 2020
+ * CommandLine V0.2, September 2020
  * Copyright (C) 2020 D.L. Ehnebuske
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,15 +34,17 @@
  * 
  ****/
 
-#include "UserInput.h"
+#include "CommandLine.h"
+
+// Public member functions
 
 /****
  * Constructor
  ****/
-UserInput::UserInput(Stream &s, bool echo) {
+CommandLine::CommandLine(Stream &s, bool echo) {
     stream = &s;
     echoing = echo;
-    defaultHandler = NULL;
+    defaultHandler = defaultUnrecognizedCmdHandler;
     handlerCount = 0;
     commandLine = "";
     lastCommandLine = "";
@@ -47,20 +52,17 @@ UserInput::UserInput(Stream &s, bool echo) {
 }
 
 /****
- * Attach (or replace) the handler that deals with unrecognized commands
+ * attachDefaultCmdHandler()
  ****/
-void UserInput::attachDefaultCmdHandler(userInputHandler handler) {
+void CommandLine::attachDefaultCmdHandler(commandHandler_t handler) {
     defaultHandler = handler;
 }
 
 /****
- * Attach the command handler for a specific command.
- * 
- * Returns true if successful, false if trying to attach too many handlers.
- * (Increase UIL_MAX_HANDLERS.)
+ * attachCmdHandler()
  ****/
-bool UserInput::attachCmdHandler(String cmd, userInputHandler handler) {
-    if (handlerCount < UIL_MAX_HANDLERS) {
+bool CommandLine::attachCmdHandler(String cmd, commandHandler_t handler) {
+    if (handlerCount < CMD_MAX_HANDLERS) {
         cmds[handlerCount] = cmd;
         handlers[handlerCount++] = handler;
         return true;
@@ -69,12 +71,12 @@ bool UserInput::attachCmdHandler(String cmd, userInputHandler handler) {
 }
 
 /****
- * Main processing routine. Call this repeatedly in loop().
+ * run()
  ****/
-void UserInput::run() {
+void CommandLine::run() {
     if (newCmd)     {
         if (echoing) {
-            stream->print(UIL_PROMPT);
+            stream->print(CMD_PROMPT);
         }
         lastCommandLine = commandLine;
         commandLine = "";
@@ -125,50 +127,16 @@ void UserInput::run() {
 }
 
 /****
- * Process user input accumulated in commandLine.
+ * cancelCmd() 
  ****/
-void UserInput::process() {
-    commandLine.trim();
-    String cmd = getWord();
-    // Ignore zero-length commands
-    if(cmd.length() == 0) {
-        return;
-    }
-
-    // Figure out which command was input
-    int8_t ix = 0;
-    do {
-        if (cmd.equals(cmds[ix])) {
-            break;
-        }
-    } while(++ix < handlerCount);
-
-    // Dispatch the associated handler, or the default handler if 
-    // there is one and no handler for the command is found
-    if (ix == handlerCount) {
-        if (defaultHandler != NULL) {
-            (*defaultHandler)();
-        }
-    } else {
-        (*handlers[ix])();
-    }
-}
-
-/****
- * 
- * Cancel any user input and start command over. If echoing, reissue the 
- * prompt.
- *  
- ****/
-void UserInput::cancelCmd() {
+void CommandLine::cancelCmd() {
     newCmd = true;
 }
 
 /****
- * Return the Nth word from commandLine, where a word
- * is a sequence of non-blank characters
+ * getWord()
  ****/
-String UserInput::getWord(uint8_t ix) {
+String CommandLine::getWord(uint8_t ix) {
     int16_t startAt = 0;
     int16_t len = commandLine.length();
     String answer = "";
@@ -190,8 +158,50 @@ String UserInput::getWord(uint8_t ix) {
 }
 
 /****
- * Return (a copy of) the whole command line
+ * getCommandLine()
  ****/
-String UserInput::getCommandLine() {
+String CommandLine::getCommandLine() {
     return String(commandLine);
+}
+
+
+// Private member functions
+
+/****
+ * process()
+ ****/
+void CommandLine::process() {
+    commandLine.trim();
+    String cmd = getWord();
+    // Ignore zero-length commands
+    if(cmd.length() == 0) {
+        return;
+    }
+
+    // Figure out which command was input
+    int8_t ix = 0;
+    do {
+        if (cmd.equals(cmds[ix])) {
+            break;
+        }
+    } while(++ix < handlerCount);
+
+    // Dispatch the associated handler, or the default handler if 
+    // there is one and no handler for the command is found
+    if (ix == handlerCount) {
+        if (defaultHandler != NULL) {
+            (*defaultHandler)(this, stream);
+        }
+    } else {
+        (*handlers[ix])(this, stream);
+    }
+}
+
+/****
+ * defaultUnrecognizedCmdHandler()
+ ****/
+void CommandLine::defaultUnrecognizedCmdHandler(CommandLine *cmdLine, Stream *clientStream) {
+    clientStream->print(F("Unknown command \""));
+    clientStream->print(cmdLine->getWord());
+    clientStream->print(F("\".\n"));
 }
