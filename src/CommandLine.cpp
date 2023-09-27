@@ -1,17 +1,17 @@
 /****
  * @file CommandLine.cpp
  * @version 1.0.0
- * @date September 1, 2023
+ * @date September 27, 2023
  * 
  * This file is a portion of the package CommandLine, a library that provides 
  * an Arduino sketch with the ability to provide a simple command line UI over 
  * a Stream (e.g., Serial).
  * 
- * See CommandLine.h for details
+ * See CommandLine.h for details.
  * 
  *****
  * 
- * CommandLine V0.2, September 2020
+ * CommandLine V0.2, September 2023
  * Copyright (C) 2020 D.L. Ehnebuske
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -134,6 +134,26 @@ void CommandLine::cancelCmd() {
 }
 
 /****
+ * getHandlerFor()
+ ****/
+CommandLine::commandHandler_t CommandLine::getHandlerFor(String commandName) {
+    // Figure out which command was input
+    int8_t ix = 0;
+    do {
+        if (commandName.equals(cmds[ix])) {
+            break;
+        }
+    } while(++ix < handlerCount);
+
+    // Dispatch the associated handler, or the default handler if 
+    // no handler for the command was found
+    if (ix != handlerCount) {
+        return handlers[ix];
+    }
+    return defaultHandler;
+}
+
+/****
  * getWord()
  ****/
 String CommandLine::getWord(uint8_t ix) {
@@ -178,30 +198,14 @@ void CommandLine::process() {
         return;
     }
 
-    // Figure out which command was input
-    int8_t ix = 0;
-    do {
-        if (cmd.equals(cmds[ix])) {
-            break;
-        }
-    } while(++ix < handlerCount);
-
-    // Dispatch the associated handler, or the default handler if 
-    // there is one and no handler for the command is found
-    if (ix == handlerCount) {
-        if (defaultHandler != NULL) {
-            (*defaultHandler)(this, stream);
-        }
-    } else {
-        (*handlers[ix])(this, stream);
-    }
+    // Dispatch whatever command handler getHandlerFor is is appropriate for the command named
+    // by cmd and print whatever it says is the correct result for the user to see on stream
+    stream->print(getHandlerFor(cmd)(this));
 }
 
 /****
  * defaultUnrecognizedCmdHandler()
  ****/
-void CommandLine::defaultUnrecognizedCmdHandler(CommandLine *cmdLine, Stream *clientStream) {
-    clientStream->print(F("Unknown command \""));
-    clientStream->print(cmdLine->getWord());
-    clientStream->print(F("\".\n"));
+String CommandLine::defaultUnrecognizedCmdHandler(CommandHandlerHelper *cmdLine) {
+    return String(F("Unknown command \"")) + cmdLine->getWord() + F("\".\n");
 }

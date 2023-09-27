@@ -1,7 +1,7 @@
 /****
  * @file main.cpp
  * @version 1.0.0
- * @date September 1, 2023
+ * @date September 4, 2023
  * 
  * This file is an example sketch for the package CommandLine, a library that provides an Arduino 
  * sketch with the ability to provide a simple command line UI over a Stream (e.g., Serial). See 
@@ -37,31 +37,29 @@ CommandLine cmdLine = CommandLine();    // Make the CommandLine object we'll use
 /**
  * 
  * @brief The "help" and "h" command handler; invoked by cmdLine.run() when a help or
- * h command is entered. Displays a list of available commands.
+ * h command is entered. Returns a list of available commands.
  * 
  */
-void onHelp(CommandLine* cl, Stream* client) {
-    Serial.println(F(
+String onHelp(CommandHandlerHelper* cl) {
+    return F(
         "Help for " BANNER "\n"
         "Command        Function\n"
         "=============  ===========================================================\n"
         "help           Display this text.\n"
         "h              Same as help.\n"
         "maxcmds        Display the current maximum number of commands.\n"
-        "echo <int>     Echo the integer that is the first parameter of the command.\n"
-    ));
+        "echo <int>     Echo the integer that is the first parameter of the command.\n");
 }
 
 /**
  *
- * @brief The "maxcmds" command handler. Print the maximum number of commands 
+ * @brief The "maxcmds" command handler. Return the maximum number of commands 
  * CommandLine is currently set to handle.
  * 
  */
-void onMaxcmds(CommandLine* cl, Stream* client) {
-    client->print(F("The maximum number of commands CommandLine currently supports is "));
-    client->print(CMD_MAX_HANDLERS);
-    client->println(F("."));
+String onMaxcmds(CommandHandlerHelper* helper) {
+    return  String(F("The maximum number of commands CommandLine currently supports is ")) +
+            CMD_MAX_HANDLERS + F(".\n");
 }
 
 
@@ -70,15 +68,12 @@ void onMaxcmds(CommandLine* cl, Stream* client) {
  * @brief The "echo" command handler. Echo the integer entered as its parameter. 
  * 
  */
-void onEcho(CommandLine* cl, Stream* client) {
-    String word = cmdLine.getWord(1);
+String onEcho(CommandHandlerHelper* helper) {
+    String word = helper->getWord(1);
     if (word == "") {
-        client->println(F("Expected and integer to echo; got nothing."));
-        return;
+        return String(F("Expected and integer to echo; got nothing.\n"));
     }
-    client->print(F("The echo command received "));
-    client->print(word.toInt());
-    client->println(F("."));
+    return String(F("The echo command received ")) + word.toInt() + String(F(".\n"));
 }
 
 /**
