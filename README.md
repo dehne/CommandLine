@@ -1,8 +1,8 @@
-# CmdLine
+# CommandLine
 
 ## An Arduino library for a simple command line UI over a Stream (Serial, by default)
 
-This file is a portion of the package CommandLine, a library that provides an Arduino sketch with the ability to provide a simple command line UI over a Stream (Serial, by default). It is a refactored replacement for my library, UserInput, which is no longer being actively developed.
+This is the package CommandLine, a library that provides an Arduino sketch with the ability to provide a simple command line UI over a Stream (Serial, by default). It is a refactored replacement for my library, UserInput, which is no longer being actively developed.
 
 A command line is a sequence of ascii characters terminated by a '\r'. It is subdivided into "words" separated by ' ' or '\t' characters. The first word in a command line is the name of the command. The rest are parameters.
 
@@ -18,7 +18,7 @@ Note: The CommandHandlerHelper interface is separated out and the CommandLine::g
 
 ## Copyright and License
 
-CommandLine V1.0.0, October 2023
+CommandLine V1.0.0, September 2023
 Copyright (C) 2020 - 2023 D.L. Ehnebuske
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
